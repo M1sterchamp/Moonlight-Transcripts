@@ -1,0 +1,58 @@
+{
+  "name": "moonlighthub-transcripts-ui",
+  "version": "1.0.0",
+  "main": "main.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node ./node_modules/electron/cli.js .",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^41.2.0",
+    "electron-builder": "^26.8.1"
+  },
+  "dependencies": {
+    "electron-updater": "^6.1.0"
+  },
+  "build": {
+    "appId": "com.moonlighthub.transcripts",
+    "productName": "Moonlight Transcripts",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!dist/**"
+    ],
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "assets",
+        "filter": [
+          "logo.png",
+          "logo.ico"
+        ]
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/logo.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/logo.ico",
+      "uninstallerIcon": "assets/logo.ico",
+      "shortcutName": "Moonlight Transcripts",
+      "createDesktopShortcut": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "YOUR_GITHUB_ORG",
+        "repo": "YOUR_PRIVATE_REPO",
+        "private": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,1013 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Transcripts</title>
+    <style>
+      :root {
+        --bgSolid: #2f2f2f;
+        --border: rgba(120, 145, 255, .22);
+        --border2: rgba(255, 255, 255, .08);
+        --text: #e7ecff;
+        --muted: rgba(231, 236, 255, .7);
+        --accent: #6ea8ff;
+        --shadow: 0 18px 50px rgba(0, 0, 0, .45);
+        --radius: 16px;
+        --radius2: 12px;
+
+        --titlebarH: 30px;
+        --windowRadius: 16px;
+      }
+
+      html, body { height: 100%; }
+      * { box-sizing: border-box; }
+
+      /* Rounded window corners (page clipping) */
+      html, body {
+        border-radius: var(--windowRadius);
+      }
+
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+          Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        background: var(--bgSolid);
+        color: var(--text);
+        height: 100vh;
+        overflow: hidden;
+        padding-top: var(--titlebarH);
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ========== CUSTOM TITLE BAR ========== */
+      #customTitlebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--titlebarH);
+        z-index: 999999;
+
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+
+        -webkit-app-region: drag;
+        background: linear-gradient(
+          180deg,
+          rgba(0,0,0,.34) 0%,
+          rgba(0,0,0,.16) 100%
+        );
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid rgba(255,255,255,.06);
+      }
+
+      /* Center the title content by using a 3-column flex layout */
+      #customTitlebar .left,
+      #customTitlebar .center,
+      #customTitlebar .right {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        min-width: 0;
+      }
+
+      #customTitlebar .center {
+        justify-content: center;
+        gap: 10px;
+      }
+
+      #customTitlebar .titleLogo {
+        width: 20px;
+        height: 20px;
+        opacity: .95;
+        filter: drop-shadow(0 8px 16px rgba(0,0,0,.25));
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+
+      #customTitlebar .appTitle {
+        font-weight: 1000;
+        letter-spacing: .2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        user-select: none;
+      }
+
+      #customTitlebar .right {
+        justify-content: flex-end;
+      }
+
+      #customTitlebar .winBtns {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .winBtn {
+        -webkit-app-region: no-drag;
+        width: 30px;
+        height: 20px;
+
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,.10);
+        background: linear-gradient(
+          180deg,
+          rgba(255,255,255,.08) 0%,
+          rgba(0,0,0,.22) 100%
+        );
+
+        color: var(--text);
+        cursor: pointer;
+        font-weight: 1000;
+        letter-spacing: .2px;
+
+        box-shadow: 0 10px 25px rgba(0,0,0,.18);
+        transition:
+          transform .08s ease,
+          background .12s ease,
+          border-color .12s ease,
+          box-shadow .12s ease,
+          filter .12s ease;
+      }
+
+      .winBtn:hover {
+        transform: translateY(-1px);
+        border-color: rgba(23, 109, 238, 0.801);
+        filter: brightness(1.08);
+        box-shadow:
+          0 16px 45px rgba(0,0,0,.28),
+          0 0 0 3px rgba(110,168,255,.12);
+      }
+      .winBtn:active { transform: translateY(0px); }
+      #minBtn:hover { box-shadow: 0 0 0 3px rgba(110,168,255,.10); }
+      #maxBtn:hover { box-shadow: 0 16px 45px rgba(0,0,0,.28), 0 0 0 3px rgba(110,168,255,.16); }
+      #closeBtn { border-color: rgba(255, 0, 0, 0.13); background: linear-gradient( 180deg, rgba(255, 0, 0, 0.603) 0%, rgba(160,40,60,.22) 100% );}
+      #closeBtn:hover { border-color: rgba(255, 0, 25, 0.568); box-shadow: 0 16px 45px rgba(0,0,0,.28), 0 0 0 3px rgba(255, 0, 25, 0.14); }
+
+      /* ========== AUTHENTICATION SCREENS ========== */
+      .centerScreen {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        flex: 1 1 auto;
+      }
+      .card {
+        width: 520px;
+        max-width: 100%;
+        border: 1px solid var(--border2);
+        border-radius: var(--radius);
+        background: rgba(255,255,255,.03);
+        box-shadow: var(--shadow);
+        padding: 18px;
+      }
+      .title {
+        font-weight: 1000;
+        letter-spacing: .6px;
+        text-transform: uppercase;
+        font-size: 14px;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        color: var(--muted);
+        font-weight: 800;
+        font-size: 12px;
+        line-height: 1.5;
+        margin-bottom: 14px;
+      }
+
+      /* ========== BUTTON STYLES ========== */
+      .btn { width: 100%; border-radius: 14px; border: 1px solid rgba(110,168,255,.35); background: rgba(110,168,255,.10); color: var(--text); padding: 12px 14px; font-weight: 1000; cursor: pointer; letter-spacing: .2px; transition: transform .08s ease, box-shadow .12s ease, background .12s ease, opacity .12s ease; }
+      .btn:hover { transform: translateY(-1px); background: rgba(110,168,255,.16); box-shadow: 0 12px 30px rgba(0,0,0,.25); }
+      .btn:disabled { cursor: not-allowed; opacity: .55; transform: none; box-shadow: none; }
+      .btnSecondary { width: 100%; margin-top: 10px; border-radius: 14px; border: 1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.18); color: var(--text); padding: 10px 14px; font-weight: 1000; cursor: pointer; }
+      .tag { display: inline-block; border-radius: 999px; border: 1px solid rgba(110,168,255,.25); background: rgba(110,168,255,.08); padding: 6px 10px; font-weight: 1000; font-size: 12px; color: var(--text); margin-bottom: 10px; }
+
+      /* ========== APPLICATION LAYOUT ========== */
+      .appShell { width: 100%; height: 100%; display: none; flex: 1 1 auto; }
+      .layout { width: 100%; display: flex; height: 100%; }
+
+      /* ========== SIDEBAR ========== */
+      .sidebar { width: 30vw; max-width: 360px; min-width: 260px; padding: 16px; border-right: 1px solid rgba(255,255,255,.06); background: rgba(0,0,0,.10); display: flex; flex-direction: column; height: 100%; }
+      .sidebarScroll { overflow-y: scroll; overflow-x: hidden; padding-right: 6px; flex: 1; min-height: 0; }
+      .sidebarScroll::-webkit-scrollbar { width: 10px; }
+      .sidebarScroll::-webkit-scrollbar-track { background: rgba(255,255,255,.03); border-radius: 999px; }
+      .sidebarScroll::-webkit-scrollbar-thumb { background: rgba(110,168,255,.22); border: 2px solid rgba(0,0,0,.18); border-radius: 999px; }
+      .sidebarScroll::-webkit-scrollbar-thumb:hover { background: rgba(110,168,255,.35); }
+      .sidebarScroll { scrollbar-width: thin; scrollbar-color: rgba(110,168,255,.35) rgba(255,255,255,.03); }
+
+      /* ========== MAIN CONTENT AREA ========== */
+      .main { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+      .mainHeader { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,.06); background: rgba(0,0,0,.12); font-weight: 1000; letter-spacing: .2px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .mainHeaderLeft { display: flex; align-items: center; gap: 10px; min-width: 0; }
+      .mainHeaderText { font-weight: 1000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .closeHeaderBtn { width: auto; margin-top: 0; border-radius: 12px; border: 1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.18); color: var(--text); padding: 8px 12px; font-weight: 1000; cursor: pointer; letter-spacing: .2px; }
+      .closeHeaderBtn:hover { background: rgba(0,0,0,.28); border-color: rgba(110,168,255,.35); }
+      .viewer { flex: 1; overflow: auto; background: rgba(0,0,0,.06); position: relative; }
+      iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+      /* ========== FILTERS & SEARCH ========== */
+      .status { color: var(--muted); font-weight: 900; font-size: 13px; margin-bottom: 12px; }
+      .filterBlock { border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.03); border-radius: var(--radius); padding: 12px; margin-bottom: 12px; transition: box-shadow .18s ease, border-color .18s ease, transform .10s ease; }
+      .filterBlock:hover { border-color: rgba(110,168,255,.18); box-shadow: 0 0 0 2px rgba(110,168,255,.08), 0 18px 50px rgba(0,0,0,.22); transform: translateY(-1px); }
+      .filterTitle { font-weight: 1000; letter-spacing: .6px; text-transform: uppercase; font-size: 12px; margin-bottom: 10px; }
+      .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+      .fieldLabel { color: var(--muted); font-weight: 900; letter-spacing: .4px; text-transform: uppercase; font-size: 10px; }
+      input { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); background: rgba(10,16,32,.35); color: var(--text); padding: 10px 10px; outline: none; font-weight: 800; font-size: 12px; }
+      input:focus { border-color: rgba(110,168,255,.60); box-shadow: 0 0 0 2px rgba(110,168,255,.12), 0 0 26px rgba(110,168,255,.16); }
+      .filtersRow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .clearBtn { width: 100%; border-radius: 12px; border: 1px solid rgba(110,168,255,.25); background: rgba(110,168,255,.08); color: rgba(231,236,255,.95); padding: 10px 10px; font-weight: 1000; cursor: pointer; letter-spacing: .2px; position: relative; overflow: hidden; margin-top: 12px; transition: border-color .15s ease, background .15s ease, transform .08s ease, box-shadow .15s ease; }
+      .clearBtn:hover { background: rgba(110,168,255,.12); border-color: rgba(110,168,255,.35); transform: translateY(-1px); box-shadow: 0 12px 30px rgba(0,0,0,.20); }
+      .clearBtn::before { content: ""; position: absolute; top: -60%; left: -60%; width: 70%; height: 220%; background: linear-gradient(90deg, transparent, rgba(110,168,255,.26), transparent); transform: rotate(12deg); opacity: 0; transition: opacity .15s ease; pointer-events: none; }
+      .clearBtn:hover::before { opacity: 1; }
+
+      /* ========== CATEGORIES & TICKETS ========== */
+      .cat { border: 1px solid var(--border2); border-radius: var(--radius); background: rgba(255,255,255,.03); overflow: hidden; margin-bottom: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+      .cat button { width: 100%; background: rgba(0,0,0,.16); border: 0; color: rgba(231,236,255,.95); padding: 14px 14px; cursor: pointer; font-weight: 1000; letter-spacing: .6px; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .countPill { color: var(--muted); font-weight: 900; font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(110,168,255,.25); background: rgba(110,168,255,.08); white-space: nowrap; }
+      .ticketList { overflow: hidden; max-height: 0px; opacity: 0; transition: max-height .22s ease, opacity .18s ease; padding: 0 12px; border-top: 1px solid rgba(255,255,255,.06); background: rgba(0,0,0,.08); }
+      .ticketList.open { max-height: 520px; overflow-y: auto; opacity: 1; padding: 12px; scrollbar-width: thin; scrollbar-color: rgba(110,168,255,.35) rgba(255,255,255,.03); }
+      .ticketList.open::-webkit-scrollbar { width: 10px; }
+      .ticketList.open::-webkit-scrollbar-track { background: rgba(255,255,255,.03); border-radius: 999px; }
+      .ticketList.open::-webkit-scrollbar-thumb { background: rgba(110,168,255,.22); border: 2px solid rgba(0,0,0,.18); border-radius: 999px; }
+      .ticketList.open::-webkit-scrollbar-thumb:hover { background: rgba(110,168,255,.35); }
+      .subHeader { display: flex; justify-content: space-between; gap: 10px; padding: 6px 6px 10px 6px; color: var(--muted); font-weight: 900; font-size: 11px; letter-spacing: .4px; text-transform: uppercase; border-bottom: 1px dashed rgba(255,255,255,.10); margin-bottom: 10px; }
+      .ticketBtn { width: 100%; border: 1px solid rgba(255,255,255,.07); background: rgba(10,16,32,.45); color: var(--text); border-radius: var(--radius2); padding: 12px 12px; margin: 10px 0 0 0; cursor: pointer; text-align: left; transition: transform .08s ease, border-color .12s ease, background .12s ease, box-shadow .12s ease; position: relative; overflow: hidden; }
+      .ticketBtn:first-child { margin-top: 0; }
+      .ticketBtn::after { content: ""; position: absolute; inset: -2px; background: radial-gradient(500px 120px at 0% 0%, rgba(110,168,255,.20), transparent 60%); opacity: 0; transition: opacity .15s ease; pointer-events: none; }
+      .ticketBtn:hover { border-color: rgba(110,168,255,.40); background: rgba(10,16,32,.58); box-shadow: 0 12px 30px rgba(0,0,0,.26); transform: translateY(-1px); }
+      .ticketBtn:hover::after { opacity: 1; }
+      .ticketBtn.active { border-color: rgba(110,168,255,.65); box-shadow: 0 0 0 2px rgba(110,168,255,.15); background: rgba(10,16,32,.66); animation: activePulse .22s ease; }
+      @keyframes activePulse { from { transform: translateY(-1px); } to { transform: translateY(0px); } }
+      .ticketGrid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+      .ticketRow { display: flex; flex-direction: column; gap: 3px; }
+      .fieldLabel2B { color: rgba(231,236,255,.55); font-weight: 1000; letter-spacing: .4px; text-transform: uppercase; font-size: 10px; }
+      .fieldValue { font-weight: 900; font-size: 12px; line-height: 1.25; color: rgba(231,236,255,.95); word-break: break-word; }
+      .fieldValue.muted { color: var(--muted); font-size: 11px; }
+
+      /* ========== FOOTER ========== */
+      .sidebarFooter { margin-top: 10px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.06); }
+      .footerLogo { width: 100%; display: flex; justify-content: center; align-items: center; margin-bottom: 8px; }
+      .footerLogo img { width: 120px; height: auto; opacity: .95; filter: drop-shadow(0 10px 20px rgba(0,0,0,.25)); }
+      .footerText { color: rgba(231,236,255,.62); font-weight: 800; font-size: 11px; text-align: center; line-height: 1.4; padding: 0 6px; }
+
+      /* ========== REFRESH BUTTON (TWO-LINE LAYOUT) ========== */
+      .refreshRow { margin-top: 12px; }
+      #refreshBtn { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 10px; gap: 2px; padding: 10px; white-space: normal; }
+      .refreshBtnTop { font-size: 11px; line-height: 1.2; font-weight: 1000; }
+      .refreshBtnBottom { font-size: 10px; line-height: 1.2; font-weight: 900; color: rgba(231,236,255,.65); letter-spacing: .2px; }
+
+      /* ========== EMPTY STATE & SPLASH SCREEN ========== */
+      .emptyTranscriptPlaceholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0.08; }
+      .emptyTranscriptPlaceholder img { width: 750px; height: auto; filter: drop-shadow(0 10px 20px rgba(0,0,0,.25)); }
+      .splashOverlay { position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: #2f2f2f; opacity: 1; transition: opacity .6s ease; }
+      .splashOverlay.fadeOut { opacity: 0; }
+
+      /* ========== SPLASH SCREEN ANIMATIONS ========== */
+      .loader { --col1: #5266FF; --col2: #5266FF; font-size: 6.2em; font-weight: 1000; perspective: 900px; position: relative; }
+      .loader::after, .loader::before, .loader .text::after, .loader .text::before {
+        perspective: 900px;
+        animation: anim 2s ease-in-out infinite, dotMove 10s ease-out alternate infinite,
+          move 10s linear infinite 1s;
+        content: '●';
+        color: var(--col1);
+        position: absolute;
+        translate: -120px 560px;
+        width: 6px;
+        height: 6px;
+      }
+      .loader::before { animation-delay: 3s; color: var(--col1); }
+      .loader .text::before { color: var(--col2); animation-delay: 2s; }
+      .loader .text::after { color: var(--col2); }
+      .loader .text {
+        animation: anim 20s linear infinite, move 10s linear infinite 1s;
+        color: transparent;
+        background-image: linear-gradient(90deg, var(--col1) 0%, var(--col2) 100%);
+        background-clip: text;
+        -webkit-background-clip: text;
+        background-size: 100%;
+        background-repeat: no-repeat;
+        transform: skew(5deg, -5deg);
+        margin: 0;
+        text-align: center;
+        line-height: 1.02;
+      }
+      @keyframes anim {
+        0%, 100% { text-shadow: 2px 0px 2px rgba(179, 158, 158, .35); }
+        50% {
+          background-size: 0%;
+          background-position-x: left;
+          text-shadow: 2px 14px 8px rgba(110, 168, 255, 1);
+        }
+      }
+      @keyframes move { 50% { translate: 0px 0px; rotate: x 60deg; transform: skew(-5deg, 5deg); } }
+      @keyframes dotMove {
+        0%, 100% { translate: -120px 340px; }
+        50% { translate: 260px -280px; scale: .55; opacity: .85; }
+      }
+
+      .winBtn {
+  -webkit-app-region: no-drag;
+
+  width: 30px;
+  height: 20px;
+
+  display: flex;              /* ADD THIS */
+  align-items: center;        /* ADD THIS */
+  justify-content: center;    /* ADD THIS */
+
+  padding: 0;                 /* ADD THIS */
+
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,.08) 0%,
+    rgba(0,0,0,.22) 100%
+  );
+
+  color: var(--text);
+  cursor: pointer;
+}
+
+
+.winBtn img {
+  width: 18px;
+  height: 18px;
+  display: block;
+  filter: brightness(0) invert(1);
+}
+
+.winBtn img {
+  pointer-events: none;
+}
+    </style>
+  </head>
+
+  <body>
+    <!-- ===== Custom Titlebar ===== -->
+    <div id="customTitlebar" aria-label="Window title bar">
+      <div class="left"></div>
+
+      <div class="center">
+        <img
+          class="titleLogo"
+          src="./assets/logo.png"
+          alt=""
+          draggable="false"
+        />
+        <div class="appTitle">Moonlight Transcripts</div>
+      </div>
+
+      <div class="right">
+        <div class="winBtns" aria-label="Window controls">
+<button class="winBtn" id="minBtn" type="button" aria-label="Minimize">
+  <img src="./assets/minimise.svg" alt="">
+</button>
+
+<button class="winBtn" id="maxBtn" type="button" aria-label="Maximize/Restore">
+  <img src="./assets/maximise.svg" alt="">
+</button>
+
+<button class="winBtn" id="closeBtn" type="button" aria-label="Close">
+  <img src="./assets/close.svg" alt="">
+</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="splashScreen" class="splashOverlay" aria-hidden="true">
+      <div class="loader">
+        <p class="text">
+          Moonlight<br />
+          Express
+        </p>
+      </div>
+    </div>
+
+    <div class="centerScreen" id="loginScreen">
+      <div class="card">
+        <div class="title">🔐 Login Required</div>
+        <div class="subtitle">
+          Connect your Discord account to access ticket transcripts.
+        </div>
+        <button class="btn" id="loginBtn" type="button">
+          Login with Discord
+        </button>
+      </div>
+    </div>
+
+    <div class="centerScreen" id="deniedScreen" style="display:none;">
+      <div class="card">
+        <div class="title">⛔ Access Denied</div>
+        <div class="tag">Not allowlisted</div>
+        <div class="subtitle">
+          Your Discord account isn’t included in the authorized list.
+          <br /><br />
+          Logout and try again later if your access is updated.
+        </div>
+
+        <button class="btn" id="logoutBtn" type="button">
+          Logout
+        </button>
+
+        <button
+          class="btnSecondary"
+          id="loginBtnDenied"
+          type="button"
+          aria-label="Try login again"
+        >
+          Login with Discord
+        </button>
+      </div>
+    </div>
+
+    <div class="appShell" id="appShell">
+      <div class="layout">
+        <aside class="sidebar" aria-label="Transcript sidebar">
+          <div class="sidebarScroll">
+            <div class="status" id="status" role="status" aria-live="polite">
+              Loading…
+            </div>
+
+            <div
+              style="
+                color: rgba(231,236,255,.65);
+                font-weight: 900;
+                font-size: 13px;
+                line-height: 1.35;
+                margin-bottom: 10px;
+                padding: 10px 12px;
+                border-radius: 14px;
+                border: 1px solid rgba(255,255,255,.06);
+                background: rgba(0,0,0,.10);
+              "
+              role="alert"
+            >
+              Anything you see in this application is considered CONFIDENTIAL.
+              Leaking any information from here will result in termination from
+              the VTC.
+            </div>
+
+            <div class="filterBlock" id="filtersBlock" aria-label="Search and filter options">
+              <div class="filterTitle">Search & Filter</div>
+
+              <div class="field">
+                <label for="searchInput" class="fieldLabel">Opener</label>
+                <input
+                  id="searchInput"
+                  type="text"
+                  placeholder="Name or Discord ID"
+                  autocomplete="off"
+                  aria-describedby="search-help"
+                />
+              </div>
+
+              <div class="filtersRow">
+                <div class="field" style="margin-bottom:0;">
+                  <label for="dateInput" class="fieldLabel">Date</label>
+                  <input id="dateInput" type="text" placeholder="DD-MM-YYYY" />
+                </div>
+
+                <div class="field" style="margin-bottom:0;">
+                  <label for="sortInput" class="fieldLabel">Sort</label>
+                  <input
+                    id="sortInput"
+                    type="text"
+                    value="Chronological"
+                    disabled
+                    style="opacity:.9;"
+                  />
+                </div>
+              </div>
+
+              <div class="field" style="margin-bottom:0;">
+                <label for="deptInput" class="fieldLabel">Department</label>
+                <input id="deptInput" type="text" placeholder="e.g. Community" />
+              </div>
+
+              <button class="clearBtn" id="clearBtn" type="button" aria-label="Clear all filters">
+                Clear filters
+              </button>
+            </div>
+
+            <div class="refreshRow">
+              <button class="clearBtn" id="refreshBtn" type="button" aria-label="Refresh transcript list">
+                <div class="refreshBtnTop">Refresh transcripts</div>
+                <div class="refreshBtnBottom">Last refreshed: —</div>
+              </button>
+            </div>
+
+            <div id="categories" role="region" aria-label="Ticket categories"></div>
+          </div>
+
+          <div class="sidebarFooter">
+            <div class="footerLogo">
+              <img src="./assets/logo.png" alt="Logo" />
+            </div>
+            <div class="footerText">
+              ©2026 copyright Moonlight Express VTC | Developed By Misterchamp
+            </div>
+          </div>
+        </aside>
+
+        <section class="main" aria-label="Transcript viewer">
+          <div class="mainHeader" role="banner">
+            <div class="mainHeaderLeft">
+              <div class="mainHeaderText" id="mainHeaderText" role="status" aria-live="polite">
+                Select a ticket
+              </div>
+            </div>
+
+            <button
+              id="closeTranscriptBtn"
+              class="closeHeaderBtn"
+              type="button"
+              aria-label="Close transcript viewer"
+            >
+              Close
+            </button>
+          </div>
+
+          <div class="viewer" role="region" aria-label="Transcript content">
+            <div
+              id="emptyTranscriptPlaceholder"
+              class="emptyTranscriptPlaceholder"
+              aria-hidden="true"
+            >
+              <img src="./assets/logo.png" alt="" />
+            </div>
+            <iframe id="transcriptFrame" title="Transcript content"></iframe>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      // ===== Splash screen =====
+      window.addEventListener("DOMContentLoaded", () => {
+        const splash = document.getElementById("splashScreen");
+        if (!splash) return;
+
+        splash.style.display = "flex";
+        splash.classList.remove("fadeOut");
+
+        setTimeout(() => {
+          splash.classList.add("fadeOut");
+          setTimeout(() => {
+            splash.style.display = "none";
+          }, 650);
+        }, 5000);
+      });
+
+      // ===== Custom titlebar window controls =====
+      const bindBtn = (id, fn) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.addEventListener("click", fn);
+      };
+
+      bindBtn("minBtn", () => window.api.winMinimize());
+      bindBtn("maxBtn", () => window.api.winMaximizeToggle());
+      bindBtn("closeBtn", () => window.api.winClose());
+    </script>
+
+    <script>
+      // ========== CONSTANTS ==========
+      const REFRESH_INTERVAL_MS = 60000;
+      const SPLASH_DISPLAY_MS = 5000;
+      const SPLASH_FADE_MS = 650;
+      const MAX_TICKET_LIST_HEIGHT = 520;
+
+      // ========== DOM ELEMENT CACHE ==========
+      const loginScreen = document.getElementById("loginScreen");
+      const deniedScreen = document.getElementById("deniedScreen");
+      const appShell = document.getElementById("appShell");
+
+      const loginBtn = document.getElementById("loginBtn");
+      const logoutBtn = document.getElementById("logoutBtn");
+      const loginBtnDenied = document.getElementById("loginBtnDenied");
+
+      const statusEl = document.getElementById("status");
+      const refreshBtn = document.getElementById("refreshBtn");
+      const closeTranscriptBtn = document.getElementById("closeTranscriptBtn");
+      const headerEl = document.getElementById("mainHeaderText");
+      const frame = document.getElementById("transcriptFrame");
+      const emptyPlaceholder = document.getElementById("emptyTranscriptPlaceholder");
+
+      const searchInput = document.getElementById("searchInput");
+      const dateInput = document.getElementById("dateInput");
+      const deptInput = document.getElementById("deptInput");
+      const clearBtn = document.getElementById("clearBtn");
+
+      const catsEl = document.getElementById("categories");
+
+      // ========== STATE VARIABLES ==========
+      let allTickets = [];
+      let activeTicketId = null;
+      let isRefreshing = false;
+      let refreshTimer = null;
+
+      // ========== UI STATE FUNCTIONS ==========
+      function showPlaceholder(show) {
+        emptyPlaceholder.style.display = show ? "flex" : "none";
+      }
+
+      function showLogin() {
+        loginScreen.style.display = "flex";
+        deniedScreen.style.display = "none";
+        appShell.style.display = "none";
+      }
+
+      function showDenied() {
+        loginScreen.style.display = "none";
+        deniedScreen.style.display = "flex";
+        appShell.style.display = "none";
+      }
+
+      function showApp() {
+        loginScreen.style.display = "none";
+        deniedScreen.style.display = "none";
+        appShell.style.display = "block";
+      }
+
+      // ========== AUTH FUNCTIONS ==========
+      async function checkAuth() {
+        try {
+          return await window.api.authMe();
+        } catch {
+          return { ok: false, status: 401 };
+        }
+      }
+
+      // ========== REFRESH & TIMESTAMP FUNCTIONS ==========
+      function formatLastRefreshedTime(d) {
+        return d.toLocaleTimeString(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        });
+      }
+
+      function setLastRefreshed(d) {
+        const bottom = refreshBtn.querySelector(".refreshBtnBottom");
+        if (!bottom) return;
+        bottom.textContent = `Last refreshed: ${formatLastRefreshedTime(d)}`;
+      }
+
+      async function refreshTranscripts() {
+        if (isRefreshing) return;
+        isRefreshing = true;
+
+        try {
+          statusEl.textContent = "Refreshing…";
+          await loadTranscripts();
+          setLastRefreshed(new Date());
+          statusEl.textContent = "Loaded transcripts.";
+        } catch (err) {
+          console.error(err);
+          statusEl.textContent = "Failed to refresh transcripts.";
+        } finally {
+          isRefreshing = false;
+        }
+      }
+
+      refreshBtn.addEventListener("click", () => refreshTranscripts());
+
+      // ========== TRANSCRIPT VIEWER FUNCTIONS ==========
+      function closeTranscript() {
+        activeTicketId = null;
+        frame.srcdoc = "";
+        headerEl.textContent = "Select a ticket";
+        showPlaceholder(true);
+
+        document.querySelectorAll(".ticketBtn.active").forEach((x) => {
+          x.classList.remove("active");
+        });
+      }
+
+      closeTranscriptBtn.addEventListener("click", closeTranscript);
+
+      async function showTranscript(id) {
+        frame.srcdoc =
+          "<div style='color:#e7ecff; padding:18px; font-weight:900'>Loading…</div>";
+        showPlaceholder(false);
+
+        const html = await window.api.getTranscriptHtml(id);
+
+        const scrollbarCss = `
+          * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(110,168,255,.35) rgba(255,255,255,.03);
+          }
+          ::-webkit-scrollbar { width: 10px; height: 10px; }
+          ::-webkit-scrollbar-track { background: rgba(255,255,255,.03); }
+          ::-webkit-scrollbar-thumb {
+            background: rgba(110,168,255,.08);
+            border: 2px solid rgba(0,0,0,.18);
+            border-radius: 999px;
+          }
+          ::-webkit-scrollbar-thumb:hover { background: rgba(110,168,255,.35); }
+        `;
+
+        if (html.includes("<head>")) {
+          frame.srcdoc = html.replace(
+            "<head>",
+            `<head><style>${scrollbarCss}</style>`
+          );
+        } else {
+          frame.srcdoc = `<style>${scrollbarCss}</style>${html}`;
+        }
+      }
+
+      // ========== AUTH EVENT HANDLERS ==========
+      loginBtn.addEventListener("click", async () => {
+        await window.api.openDiscordLogin();
+        await boot();
+      });
+
+      logoutBtn.addEventListener("click", async () => {
+        if (refreshTimer) clearInterval(refreshTimer);
+        refreshTimer = null;
+        await window.api.logout();
+        showLogin();
+      });
+
+      loginBtnDenied.addEventListener("click", async () => {
+        if (refreshTimer) clearInterval(refreshTimer);
+        refreshTimer = null;
+        await window.api.logout();
+        await window.api.openDiscordLogin();
+        await boot();
+      });
+
+      // ========== DATE & CHANNEL PARSING FUNCTIONS ==========
+      function toDdMmYyyy(ddmmyyyy) {
+        const dd = ddmmyyyy.slice(0, 2);
+        const mm = ddmmyyyy.slice(2, 4);
+        const yyyy = ddmmyyyy.slice(4, 8);
+        return `${dd}-${mm}-${yyyy}`;
+      }
+
+      function parseChannel(channelName) {
+        const parts = String(channelName || "").split("-").filter(Boolean);
+        if (parts.length < 3) {
+          return { typeKey: null, openedAtLabel: "", openedAtDate: new Date(0) };
+        }
+
+        const last = parts[parts.length - 1];
+        const hasDate = /^\d{8}$/.test(last);
+
+        if (hasDate) {
+          const categoryParts = parts.slice(1, parts.length - 2);
+          const datePart = last;
+
+          const openedAtLabel = toDdMmYyyy(datePart);
+          const [dd, mm, yyyy] = openedAtLabel.split("-");
+          const openedAtDate = new Date(`${yyyy}-${mm}-${dd}T00:00:00Z`);
+
+          return { typeKey: categoryParts.join("-"), openedAtLabel, openedAtDate };
+        }
+
+        const categoryParts = parts.slice(1, parts.length - 1);
+        return {
+          typeKey: categoryParts.join("-"),
+          openedAtLabel: "",
+          openedAtDate: new Date(0)
+        };
+      }
+
+      function prettyType(s) {
+        return String(s)
+          .split("-")
+          .filter(Boolean)
+          .map((x) => x.charAt(0).toUpperCase() + x.slice(1))
+          .join(" ");
+      }
+
+      function splitOpenedBy(openedBy) {
+        const s = String(openedBy).trim();
+        const m = s.match(/^(.*?)\s*\((\d+)\)\s*$/);
+        if (!m) return { name: s, discordId: "" };
+        return { name: m[1].trim(), discordId: m[2].trim() };
+      }
+
+      // ========== FILTER & SEARCH FUNCTIONS ==========
+      function normalizeSearch(s) {
+        return String(s || "").trim().toLowerCase();
+      }
+
+      function matchesDate(ticket, dateStr) {
+        const d = String(dateStr || "").trim();
+        if (!d) return true;
+        return ticket.openedAtLabel === d;
+      }
+
+      function buildFilteredTickets() {
+        const q = normalizeSearch(searchInput.value);
+        const dateStr = String(dateInput.value || "").trim();
+        const deptStr = normalizeSearch(deptInput.value);
+
+        return allTickets.filter((t) => {
+          if (!matchesDate(t, dateStr)) return false;
+
+          if (!q && !deptStr) return true;
+
+          if (deptStr) {
+            const dept = normalizeSearch(t.management_department || "");
+            if (!dept) return false;
+            if (!dept.includes(deptStr)) return false;
+          }
+
+          if (!q) return true;
+
+          const name = String(t.opened_by_name || "").toLowerCase();
+          const did = String(t.opened_by_discordId || "").toLowerCase();
+          return name.includes(q) || did.includes(q);
+        });
+      }
+
+      // ========== SIDEBAR RENDERING FUNCTIONS ==========
+      function renderSidebar() {
+        const filtered = buildFilteredTickets();
+        catsEl.innerHTML = "";
+
+        if (filtered.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "status";
+          empty.textContent = "No tickets match your filters.";
+          catsEl.appendChild(empty);
+          return;
+        }
+
+        const map = new Map();
+        for (const t of filtered) {
+          if (!map.has(t.ticketType)) map.set(t.ticketType, []);
+          map.get(t.ticketType).push(t);
+        }
+
+        const categories = [...map.entries()].map(([type, tickets]) => ({
+          type,
+          tickets: tickets.sort((a, b) => b.openedAtDate - a.openedAtDate)
+        }));
+
+        categories.sort((a, b) => a.type.localeCompare(b.type));
+
+        for (const cat of categories) {
+          const catEl = document.createElement("div");
+          catEl.className = "cat";
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.innerHTML = `
+            <span>${cat.type}</span>
+            <span class="countPill">${cat.tickets.length}</span>
+          `;
+
+          const list = document.createElement("div");
+          list.className = "ticketList";
+
+          btn.addEventListener("click", () => {
+            document.querySelectorAll(".ticketList.open").forEach((el) => {
+              if (el !== list) el.classList.remove("open");
+            });
+            list.classList.toggle("open");
+          });
+
+          const subHeader = document.createElement("div");
+          subHeader.className = "subHeader";
+          subHeader.innerHTML = `
+            <span>Opened By</span>
+            <span>Date</span>
+          `;
+          list.appendChild(subHeader);
+
+          const isManagementCat = String(cat.type || "").toLowerCase() === "management";
+
+          cat.tickets.forEach((t, idx) => {
+            const item = document.createElement("button");
+            item.className = "ticketBtn";
+            item.type = "button";
+            if (idx === 0) item.style.marginTop = "0px";
+
+            item.innerHTML = `
+              <div class="ticketGrid">
+                <div class="ticketRow">
+                  <div class="fieldLabel2B">Opened By</div>
+                  <div class="fieldValue">${t.opened_by_name}</div>
+                  <div class="fieldValue muted">
+                    ${t.opened_by_discordId ? t.opened_by_discordId : "—"}
+                  </div>
+
+                  ${
+                    isManagementCat
+                      ? `<div class="fieldValue muted" style="margin-top:6px; font-size:11px;">
+                           Department: ${t.management_department || "—"}
+                         </div>`
+                      : ""
+                  }
+                </div>
+
+                <div class="ticketRow">
+                  <div class="fieldLabel2B">Date</div>
+                  <div class="fieldValue">${t.openedAtLabel}</div>
+                </div>
+              </div>
+            `;
+
+            if (t.ticket_id === activeTicketId) item.classList.add("active");
+
+            item.addEventListener("click", async () => {
+              activeTicketId = t.ticket_id;
+
+              document
+                .querySelectorAll(".ticketBtn.active")
+                .forEach((x) => x.classList.remove("active"));
+              item.classList.add("active");
+
+              headerEl.textContent = `${t.ticketType} — opened ${t.openedAtLabel}`;
+              await showTranscript(t.ticket_id);
+            });
+
+            list.appendChild(item);
+          });
+
+          catEl.appendChild(btn);
+          catEl.appendChild(list);
+          catsEl.appendChild(catEl);
+        }
+      }
+
+      // ========== DATA LOADING FUNCTIONS ==========
+      async function loadTranscripts() {
+        statusEl.textContent = "Loading…";
+
+        const data = await window.api.getTranscripts();
+        if (!data.ok) throw new Error("API returned ok=false");
+
+        allTickets = data.transcripts.map((t) => {
+          const p = parseChannel(t.channel_name);
+          const opened = splitOpenedBy(t.opened_by);
+
+          return {
+            ticket_id: t.ticket_id,
+            channel_name: t.channel_name,
+            opened_by_name: opened.name,
+            opened_by_discordId: opened.discordId,
+            ticketType: prettyType(p.typeKey),
+            typeKey: p.typeKey,
+            openedAtLabel: p.openedAtLabel || "—",
+            openedAtDate: p.openedAtDate,
+            management_department: t.management_department || ""
+          };
+        });
+
+        renderSidebar();
+        statusEl.textContent = "Loaded transcripts.";
+      }
+
+      // ========== BOOTSTRAP ==========
+      async function boot() {
+        const me = await checkAuth();
+
+        if (me && me.ok) {
+          showApp();
+
+          if (refreshTimer) clearInterval(refreshTimer);
+          refreshTimer = null;
+
+          await loadTranscripts();
+          setLastRefreshed(new Date());
+
+          refreshTimer = setInterval(() => {
+            refreshTranscripts();
+          }, REFRESH_INTERVAL_MS);
+        } else if (me && me.status === 403) {
+          showDenied();
+        } else {
+          showLogin();
+        }
+      }
+
+      // ========== FILTER EVENT LISTENERS ==========
+      searchInput.addEventListener("input", () => renderSidebar());
+      dateInput.addEventListener("input", () => renderSidebar());
+      deptInput.addEventListener("input", () => renderSidebar());
+
+      clearBtn.addEventListener("click", () => {
+        searchInput.value = "";
+        dateInput.value = "";
+        deptInput.value = "";
+        renderSidebar();
+      });
+
+      showPlaceholder(true);
+      boot();
+    </script>
+  </body>
+</html>
