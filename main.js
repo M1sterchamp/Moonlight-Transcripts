@@ -57,7 +57,6 @@ function createUpdaterLogger() {
     }
   }
 
-  // Add markers
   write("=== app start ===");
   write(`app.getVersion=${app.getVersion()}`);
   write(`process.platform=${process.platform}`);
@@ -67,6 +66,7 @@ function createUpdaterLogger() {
 }
 
 // ========== AUTHENTICATION HELPERS ==========
+// IMPORTANT: electron-updater also uses network; this cookie approach is separate.
 async function getMoonAuthCookieHeader() {
   const cookies = await session.defaultSession.cookies.get({
     url: "https://transcripts.moonlighthub.co.uk",
@@ -148,17 +148,14 @@ function createWindow() {
 // ========== AUTO UPDATES (logging as much as possible) ==========
 function setupAutoUpdates(logger) {
   logger.write("autoUpdater: setupAutoUpdates entered");
-
-  // electron-updater internal logger still goes to console (kept)
   autoUpdater.logger = console;
 
-  // Explicit feed URL to latest.yml (bypasses releases.atom)
   const feedURL =
     "https://github.com/M1sterchamp/Moonlight-Transcripts/releases/latest/download/latest.yml";
 
+  logger.write(`autoUpdater: setFeedURL about to run url=${feedURL}`);
   try {
-    logger.write(`autoUpdater: setFeedURL about to run url=${feedURL}`);
-    autoUpdater.setFeedURL({ url: feedURL });
+    autoUpdater.setFeedURL({ provider: "generic", url: feedURL });
     logger.write("autoUpdater: setFeedURL success");
   } catch (e) {
     const msg = e && e.stack ? e.stack : String(e);
@@ -166,7 +163,6 @@ function setupAutoUpdates(logger) {
     throw e;
   }
 
-  // Event handlers
   autoUpdater.on("checking-for-update", () => {
     logger.write("autoUpdater: checking-for-update event");
   });
@@ -235,9 +231,7 @@ function startUpdateChecks(logger) {
     logger.write("autoUpdater: calling checkForUpdates()");
     const p = autoUpdater.checkForUpdates();
 
-    logger.write(
-      `autoUpdater: checkForUpdates returned type=${typeof p}`
-    );
+    logger.write(`autoUpdater: checkForUpdates returned type=${typeof p}`);
 
     if (p && typeof p.then === "function") {
       p.then((res) => {
@@ -263,7 +257,9 @@ function startUpdateChecks(logger) {
   }
 }
 
-// ========== IPC HANDLERS ==========
+// ========== IPC HANDLERS (MAIN <-> RENDERER COMMUNICATION) ==========
+
+// ===== Window controls (custom titlebar) =====
 ipcMain.handle("win:minimize", (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (win) win.minimize();
@@ -289,10 +285,7 @@ ipcMain.handle("win:close", (event) => {
 // ===== Transcripts =====
 ipcMain.handle("transcripts:getList", async () => {
   const cookieHeader = await getMoonAuthCookieHeader();
-  return fetchJson(
-    "https://transcripts.moonlighthub.co.uk/transcripts",
-    cookieHeader
-  );
+  return fetchJson("https://transcripts.moonlighthub.co.uk/transcripts", cookieHeader);
 });
 
 ipcMain.handle("transcripts:getHtml", async (_event, ticketId) => {
