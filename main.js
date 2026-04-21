@@ -150,13 +150,20 @@ function setupAutoUpdates(logger) {
   logger.write("autoUpdater: setupAutoUpdates entered");
   autoUpdater.logger = console;
 
-  const feedURL =
-    "https://github.com/M1sterchamp/Moonlight-Transcripts/releases/latest/download/latest.yml";
-
-  logger.write(`autoUpdater: setFeedURL about to run url=${feedURL}`);
   try {
-    autoUpdater.setFeedURL({ provider: "generic", url: feedURL });
-    logger.write("autoUpdater: setFeedURL success");
+    // IMPORTANT:
+    // Your previous feed URL included latest.yml, and electron-updater
+    // appended another latest.yml, leading to ".../latest.yml/latest.yml".
+    // With the generic provider, point to the directory and set `channel`.
+    autoUpdater.setFeedURL({
+      provider: "generic",
+      url: "https://github.com/M1sterchamp/Moonlight-Transcripts/releases/latest/download/",
+      channel: "latest.yml"
+    });
+
+    logger.write(
+      "autoUpdater: setFeedURL success (generic + latest.yml channel)"
+    );
   } catch (e) {
     const msg = e && e.stack ? e.stack : String(e);
     logger.write(`autoUpdater: setFeedURL exception: ${msg}`);
@@ -285,7 +292,10 @@ ipcMain.handle("win:close", (event) => {
 // ===== Transcripts =====
 ipcMain.handle("transcripts:getList", async () => {
   const cookieHeader = await getMoonAuthCookieHeader();
-  return fetchJson("https://transcripts.moonlighthub.co.uk/transcripts", cookieHeader);
+  return fetchJson(
+    "https://transcripts.moonlighthub.co.uk/transcripts",
+    cookieHeader
+  );
 });
 
 ipcMain.handle("transcripts:getHtml", async (_event, ticketId) => {
