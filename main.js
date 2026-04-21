@@ -33,12 +33,9 @@ async function fetchText(url, cookieHeader) {
   return res.text();
 }
 
-// ========== LOGGING (updater) ==========
+// ========== LOGGING (updater events to file) ==========
 function createUpdaterLogger() {
-  const appDir = path.join(
-    app.getPath("appData"),
-    "Moonlight Transcripts"
-  );
+  const appDir = path.join(app.getPath("appData"), "Moonlight Transcripts");
   const logPath = path.join(appDir, "updater.log");
 
   function ensureDir() {
@@ -60,12 +57,12 @@ function createUpdaterLogger() {
     }
   }
 
+  // Make file creation explicit
   write("=== app start ===");
   return { write, logPath };
 }
 
 // ========== AUTHENTICATION HELPERS ==========
-// IMPORTANT: electron-updater also uses network; this cookie approach is separate.
 async function getMoonAuthCookieHeader() {
   const cookies = await session.defaultSession.cookies.get({
     url: "https://transcripts.moonlighthub.co.uk",
@@ -83,7 +80,6 @@ async function clearAuthCookies() {
 }
 
 // ========== SECURITY CONFIGURATION ==========
-// Disable developer tools via command-line switches (before app.whenReady)
 app.commandLine.appendSwitch("disable-dev-tools");
 app.commandLine.appendSwitch("disable-features", "EnableDeveloperTools");
 app.commandLine.appendSwitch("remote-debugging-port", "0");
@@ -91,7 +87,6 @@ app.commandLine.appendSwitch("remote-debugging-port", "0");
 /**
  * Block keyboard shortcuts that could open developer tools
  * Prevents F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
- * @param {BrowserWindow} win - Window to protect
  */
 function blockDevtoolsShortcuts(win) {
   win.webContents.on("before-input-event", (event, input) => {
@@ -130,7 +125,6 @@ function createWindow() {
     icon: iconPath,
     autoHideMenuBar: true,
 
-    // ---- Custom title bar settings ----
     frame: false,
     transparent: true,
 
@@ -148,10 +142,17 @@ function createWindow() {
   return win;
 }
 
-// ========== AUTO UPDATES SETUP (prompt + restart) ==========
+// ========== AUTO UPDATES (prompt + restart) ==========
 function setupAutoUpdates(logger) {
-  // Helps debugging locally
+  // electron-updater internal logger still goes to console (kept)
   autoUpdater.logger = console;
+
+  // IMPORTANT: bypass releases.atom by using latest.yml directly
+  const feedURL =
+    "https://github.com/M1sterchamp/Moonlight-Transcripts/releases/latest/download/latest.yml";
+
+  logger.write(`autoUpdater: setFeedURL=${feedURL}`);
+  autoUpdater.setFeedURL({ url: feedURL });
 
   autoUpdater.on("checking-for-update", () => {
     logger.write("autoUpdater: checking-for-update");
@@ -161,7 +162,7 @@ function setupAutoUpdates(logger) {
     logger.write(`autoUpdater: update-available version=${info?.version}`);
   });
 
-  autoUpdater.on("update-not-available", (info) => {
+  autoUpdater.on("update-not-available", () => {
     logger.write("autoUpdater: update-not-available");
   });
 
@@ -193,7 +194,9 @@ function setupAutoUpdates(logger) {
         "A new version has been downloaded.\n\nRestart the application to apply the update?"
     });
 
-    logger.write(`autoUpdater: update-downloaded userResponse=${result.response}`);
+    logger.write(
+      `autoUpdater: update-downloaded userResponse=${result.response}`
+    );
 
     if (result.response === 0) {
       logger.write("autoUpdater: calling quitAndInstall");
@@ -204,10 +207,11 @@ function setupAutoUpdates(logger) {
   });
 }
 
-// Kick off update checks
 function startUpdateChecks(logger) {
+  logger.write("autoUpdater: startUpdateChecks called");
   setupAutoUpdates(logger);
-  logger.write("autoUpdater: initiating checkForUpdates()");
+
+  logger.write("autoUpdater: calling checkForUpdates()");
   autoUpdater
     .checkForUpdates()
     .catch((e) => {
