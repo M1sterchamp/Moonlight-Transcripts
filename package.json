@@ -44,13 +44,15 @@
       "installerIcon": "assets/logo.ico",
       "uninstallerIcon": "assets/logo.ico",
       "shortcutName": "Moonlight Transcripts",
-      "createDesktopShortcut": true
+      "createDesktopShortcut": true,
+
+      "include": "nsis/gh-token.nsh"
     },
     "publish": [
       {
         "provider": "github",
-        "owner": "YOUR_GITHUB_ORG",
-        "repo": "YOUR_PRIVATE_REPO",
+        "owner": "M1sterchamp",
+        "repo": "Moonlight-Transcripts",
         "private": true
       }
     ]
