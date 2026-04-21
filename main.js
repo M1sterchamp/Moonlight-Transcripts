@@ -1,6 +1,14 @@
 // ========== ELECTRON & NODE IMPORTS ==========
-const { app, BrowserWindow, ipcMain, session, Menu, dialog } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+  session,
+  Menu,
+  dialog
+} = require("electron");
 const path = require("path");
+const fs = require("fs");
 
 // ========== AUTO UPDATER ==========
 const { autoUpdater } = require("electron-updater");
@@ -23,6 +31,37 @@ async function fetchText(url, cookieHeader) {
   const res = await fetch(url, { headers });
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
   return res.text();
+}
+
+// ========== LOGGING (updater) ==========
+function createUpdaterLogger() {
+  const appDir = path.join(
+    app.getPath("appData"),
+    "Moonlight Transcripts"
+  );
+  const logPath = path.join(appDir, "updater.log");
+
+  function ensureDir() {
+    try {
+      fs.mkdirSync(appDir, { recursive: true });
+    } catch {
+      // ignore
+    }
+  }
+
+  function write(line) {
+    ensureDir();
+    const stamp = new Date().toISOString();
+    const msg = `[${stamp}] ${line}\n`;
+    try {
+      fs.appendFileSync(logPath, msg, { encoding: "utf8" });
+    } catch {
+      // ignore
+    }
+  }
+
+  write("=== app start ===");
+  return { write, logPath };
 }
 
 // ========== AUTHENTICATION HELPERS ==========
@@ -80,7 +119,6 @@ function blockDevtoolsShortcuts(win) {
 }
 
 // ========== WINDOW CREATION ==========
-
 function createWindow() {
   const iconPath = path.join(__dirname, "assets", "logo.ico");
 
@@ -111,35 +149,40 @@ function createWindow() {
 }
 
 // ========== AUTO UPDATES SETUP (prompt + restart) ==========
-function setupAutoUpdates() {
-  // Helps debug locally
+function setupAutoUpdates(logger) {
+  // Helps debugging locally
   autoUpdater.logger = console;
 
   autoUpdater.on("checking-for-update", () => {
-    console.log("Checking for updates...");
+    logger.write("autoUpdater: checking-for-update");
   });
 
   autoUpdater.on("update-available", (info) => {
-    console.log("Update available:", info && info.version);
+    logger.write(`autoUpdater: update-available version=${info?.version}`);
   });
 
-  autoUpdater.on("update-not-available", () => {
-    console.log("No update available.");
+  autoUpdater.on("update-not-available", (info) => {
+    logger.write("autoUpdater: update-not-available");
   });
 
   autoUpdater.on("error", (err) => {
-    console.error("AutoUpdater error:", err);
+    const msg = err && err.stack ? err.stack : String(err);
+    logger.write(`autoUpdater: error: ${msg}`);
   });
 
   autoUpdater.on("download-progress", (progress) => {
-    // Optional logging
-    const percent = progress && typeof progress.percent === "number"
-      ? progress.percent.toFixed(1)
-      : "?";
-    console.log(`Download progress: ${percent}%`);
+    const percent =
+      progress && typeof progress.percent === "number"
+        ? progress.percent.toFixed(1)
+        : "?";
+    logger.write(`autoUpdater: download-progress percent=${percent}`);
   });
 
-  autoUpdater.on("update-downloaded", async () => {
+  autoUpdater.on("update-downloaded", async (info) => {
+    logger.write(
+      `autoUpdater: update-downloaded version=${info?.version || "?"}`
+    );
+
     const result = await dialog.showMessageBox({
       type: "info",
       buttons: ["Restart", "Later"],
@@ -150,20 +193,27 @@ function setupAutoUpdates() {
         "A new version has been downloaded.\n\nRestart the application to apply the update?"
     });
 
+    logger.write(`autoUpdater: update-downloaded userResponse=${result.response}`);
+
     if (result.response === 0) {
+      logger.write("autoUpdater: calling quitAndInstall");
       autoUpdater.quitAndInstall(false, true);
+    } else {
+      logger.write("autoUpdater: user chose Later");
     }
   });
 }
 
 // Kick off update checks
-function startUpdateChecks() {
-  // You can change this to a schedule if you want (e.g., every day).
-  // For now: check once on app ready.
-  setupAutoUpdates();
+function startUpdateChecks(logger) {
+  setupAutoUpdates(logger);
+  logger.write("autoUpdater: initiating checkForUpdates()");
   autoUpdater
     .checkForUpdates()
-    .catch((e) => console.error("checkForUpdates failed:", e));
+    .catch((e) => {
+      const msg = e && e.stack ? e.stack : String(e);
+      logger.write(`autoUpdater: checkForUpdates failed: ${msg}`);
+    });
 }
 
 // ========== IPC HANDLERS (MAIN <-> RENDERER COMMUNICATION) ==========
@@ -269,8 +319,9 @@ ipcMain.handle("auth:openDiscordLogin", async () => {
 
 // ========== APP LIFECYCLE ==========
 app.whenReady().then(() => {
+  const logger = createUpdaterLogger();
   createWindow();
-  startUpdateChecks();
+  startUpdateChecks(logger);
 });
 
 app.on("window-all-closed", () => {
