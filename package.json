@@ -5,7 +5,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node ./node_modules/electron/cli.js .",
-    "dist": "electron-builder"
+    "dist": "node ./node_modules/electron-builder/cli.js"
   },
   "devDependencies": {
     "electron": "^41.2.0",
@@ -32,6 +32,10 @@
           "logo.png",
           "logo.ico"
         ]
+      },
+      {
+        "from": "build/gh-token.txt",
+        "to": "gh-token.txt"
       }
     ],
     "win": {
@@ -45,7 +49,6 @@
       "uninstallerIcon": "assets/logo.ico",
       "shortcutName": "Moonlight Transcripts",
       "createDesktopShortcut": true,
-
       "include": "nsis/gh-token.nsh"
     },
     "publish": [
