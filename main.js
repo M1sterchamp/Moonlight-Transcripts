@@ -158,7 +158,7 @@ function setupAutoUpdates(logger) {
     autoUpdater.setFeedURL({
       provider: "generic",
       url: "https://github.com/M1sterchamp/Moonlight-Transcripts/releases/latest/download/",
-      channel: "latest.yml"
+      channel: "latest"
     });
 
     logger.write(
