@@ -33,7 +33,7 @@ async function fetchText(url, cookieHeader) {
   return res.text();
 }
 
-// ========== LOGGING (updater events to file) ==========
+// ========== LOGGING ==========
 function createUpdaterLogger() {
   const appDir = path.join(app.getPath("appData"), "Moonlight Transcripts");
   const logPath = path.join(appDir, "updater.log");
@@ -57,8 +57,12 @@ function createUpdaterLogger() {
     }
   }
 
-  // Make file creation explicit
+  // Add markers
   write("=== app start ===");
+  write(`app.getVersion=${app.getVersion()}`);
+  write(`process.platform=${process.platform}`);
+  write(`NODE_ENV=${process.env.NODE_ENV || ""}`);
+
   return { write, logPath };
 }
 
@@ -86,7 +90,6 @@ app.commandLine.appendSwitch("remote-debugging-port", "0");
 
 /**
  * Block keyboard shortcuts that could open developer tools
- * Prevents F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
  */
 function blockDevtoolsShortcuts(win) {
   win.webContents.on("before-input-event", (event, input) => {
@@ -142,33 +145,45 @@ function createWindow() {
   return win;
 }
 
-// ========== AUTO UPDATES (prompt + restart) ==========
+// ========== AUTO UPDATES (logging as much as possible) ==========
 function setupAutoUpdates(logger) {
+  logger.write("autoUpdater: setupAutoUpdates entered");
+
   // electron-updater internal logger still goes to console (kept)
   autoUpdater.logger = console;
 
-  // IMPORTANT: bypass releases.atom by using latest.yml directly
+  // Explicit feed URL to latest.yml (bypasses releases.atom)
   const feedURL =
     "https://github.com/M1sterchamp/Moonlight-Transcripts/releases/latest/download/latest.yml";
 
-  logger.write(`autoUpdater: setFeedURL=${feedURL}`);
-  autoUpdater.setFeedURL({ url: feedURL });
+  try {
+    logger.write(`autoUpdater: setFeedURL about to run url=${feedURL}`);
+    autoUpdater.setFeedURL({ url: feedURL });
+    logger.write("autoUpdater: setFeedURL success");
+  } catch (e) {
+    const msg = e && e.stack ? e.stack : String(e);
+    logger.write(`autoUpdater: setFeedURL exception: ${msg}`);
+    throw e;
+  }
 
+  // Event handlers
   autoUpdater.on("checking-for-update", () => {
-    logger.write("autoUpdater: checking-for-update");
+    logger.write("autoUpdater: checking-for-update event");
   });
 
   autoUpdater.on("update-available", (info) => {
-    logger.write(`autoUpdater: update-available version=${info?.version}`);
+    logger.write(
+      `autoUpdater: update-available event version=${info?.version || "?"}`
+    );
   });
 
   autoUpdater.on("update-not-available", () => {
-    logger.write("autoUpdater: update-not-available");
+    logger.write("autoUpdater: update-not-available event");
   });
 
   autoUpdater.on("error", (err) => {
     const msg = err && err.stack ? err.stack : String(err);
-    logger.write(`autoUpdater: error: ${msg}`);
+    logger.write(`autoUpdater: error event: ${msg}`);
   });
 
   autoUpdater.on("download-progress", (progress) => {
@@ -176,12 +191,12 @@ function setupAutoUpdates(logger) {
       progress && typeof progress.percent === "number"
         ? progress.percent.toFixed(1)
         : "?";
-    logger.write(`autoUpdater: download-progress percent=${percent}`);
+    logger.write(`autoUpdater: download-progress event percent=${percent}`);
   });
 
   autoUpdater.on("update-downloaded", async (info) => {
     logger.write(
-      `autoUpdater: update-downloaded version=${info?.version || "?"}`
+      `autoUpdater: update-downloaded event version=${info?.version || "?"}`
     );
 
     const result = await dialog.showMessageBox({
@@ -205,24 +220,50 @@ function setupAutoUpdates(logger) {
       logger.write("autoUpdater: user chose Later");
     }
   });
+
+  logger.write("autoUpdater: setupAutoUpdates finished");
 }
 
 function startUpdateChecks(logger) {
-  logger.write("autoUpdater: startUpdateChecks called");
-  setupAutoUpdates(logger);
+  logger.write("autoUpdater: startUpdateChecks entered");
 
-  logger.write("autoUpdater: calling checkForUpdates()");
-  autoUpdater
-    .checkForUpdates()
-    .catch((e) => {
+  try {
+    logger.write("autoUpdater: calling setupAutoUpdates");
+    setupAutoUpdates(logger);
+    logger.write("autoUpdater: setupAutoUpdates returned");
+
+    logger.write("autoUpdater: calling checkForUpdates()");
+    const p = autoUpdater.checkForUpdates();
+
+    logger.write(
+      `autoUpdater: checkForUpdates returned type=${typeof p}`
+    );
+
+    if (p && typeof p.then === "function") {
+      p.then((res) => {
+        try {
+          logger.write(
+            `autoUpdater: checkForUpdates resolved: ${JSON.stringify(res)}`
+          );
+        } catch {
+          logger.write("autoUpdater: checkForUpdates resolved (unstringifiable)");
+        }
+      });
+    }
+
+    p.catch((e) => {
       const msg = e && e.stack ? e.stack : String(e);
-      logger.write(`autoUpdater: checkForUpdates failed: ${msg}`);
+      logger.write(`autoUpdater: checkForUpdates rejected: ${msg}`);
     });
+
+    logger.write("autoUpdater: startUpdateChecks exiting normally");
+  } catch (e) {
+    const msg = e && e.stack ? e.stack : String(e);
+    logger.write(`autoUpdater: startUpdateChecks exception: ${msg}`);
+  }
 }
 
-// ========== IPC HANDLERS (MAIN <-> RENDERER COMMUNICATION) ==========
-
-// ===== Window controls (custom titlebar) =====
+// ========== IPC HANDLERS ==========
 ipcMain.handle("win:minimize", (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (win) win.minimize();
